@@ -34,8 +34,9 @@ allprojects {
 
         developmentOnly 'org.springframework.boot:spring-boot-devtools'
     }
+    
+    tasks.named('test') {
+        useJUnitPlatform()
+    }
 }
 
-tasks.named('test') {
-    useJUnitPlatform()
-}
