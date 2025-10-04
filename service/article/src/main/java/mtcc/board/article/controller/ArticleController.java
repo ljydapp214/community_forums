@@ -1,17 +1,21 @@
 package mtcc.board.article.controller;
 
+import java.util.List;
+
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import lombok.RequiredArgsConstructor;
 import mtcc.board.article.service.ArticleService;
 import mtcc.board.article.service.request.ArticleCreateRequest;
 import mtcc.board.article.service.request.ArticleUpdateRequest;
+import mtcc.board.article.service.response.ArticlePageResponse;
 import mtcc.board.article.service.response.ArticleResponse;
 
 @RestController
@@ -22,6 +26,24 @@ public class ArticleController {
 	@GetMapping("/v1/articles/{articleId}")
 	public ArticleResponse read(@PathVariable Long articleId) {
 		return articleService.read(articleId);
+	}
+
+	@GetMapping("/v1/articles")
+	public ArticlePageResponse readAll(
+		@RequestParam("boardId") long boardId,
+		@RequestParam("page") long page,
+		@RequestParam("pageSize") long pageSize
+	) {
+		return articleService.readAll(boardId, page, pageSize);
+	}
+
+	@GetMapping("/v1/articles/infinite-scroll")
+	public List<ArticleResponse> readAllInfiniteScroll(
+		@RequestParam("boardId") long boardId,
+		@RequestParam(value = "lastArticleId", required = false, defaultValue = "0") Long lastArticleId,
+		@RequestParam("pageSize") long pageSize
+	) {
+		return articleService.readAllInfiniteScroll(boardId, lastArticleId, pageSize);
 	}
 
 	@PostMapping("/v1/articles")

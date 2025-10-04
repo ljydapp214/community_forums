@@ -1,5 +1,7 @@
 package mtcc.board.article.service;
 
+import java.util.List;
+
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -8,6 +10,7 @@ import mtcc.board.article.entity.Article;
 import mtcc.board.article.repository.ArticleRepository;
 import mtcc.board.article.service.request.ArticleCreateRequest;
 import mtcc.board.article.service.request.ArticleUpdateRequest;
+import mtcc.board.article.service.response.ArticlePageResponse;
 import mtcc.board.article.service.response.ArticleResponse;
 import mtcc.board.common.snowflake.Snowflake;
 
@@ -43,5 +46,24 @@ public class ArticleService {
 	public void delete(Long articleId) {
 		Article article = articleRepository.findById(articleId).orElseThrow();
 		articleRepository.delete(article);
+	}
+
+	public ArticlePageResponse readAll(long boardId, long page, long pageSize) {
+		long offset = (page - 1) * pageSize;
+		long limit = PageLimitCalculator.calculatePageLimit(page, pageSize, 10L);
+		var articles = articleRepository.findAll(boardId, offset, pageSize).stream()
+			.map(ArticleResponse::from)
+			.toList();
+		long articleCount = articleRepository.countByBoardId(boardId, limit);
+
+		return ArticlePageResponse.of(articles, articleCount);
+	}
+
+	public List<ArticleResponse> readAllInfiniteScroll(long boardId, long lastArticleId, long limit) {
+		List<Article> articles = lastArticleId == 0 ?
+			articleRepository.findAllInfiniteScroll(boardId, limit)
+			: articleRepository.findAllInfiniteScroll(boardId, lastArticleId, limit);
+
+		return articles.stream().map(ArticleResponse::from).toList();
 	}
 }
