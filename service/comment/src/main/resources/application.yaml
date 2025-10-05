@@ -1,2 +1,17 @@
 server:
   port: 8082
+
+spring:
+  application:
+    name: comment-service
+  datasource:
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    url: jdbc:mysql://localhost:31307/comment?serverTimezone=UTC
+    username: test
+    password: 1234
+  jpa:
+    hibernate:
+      ddl-auto: none
+    database-platform: org.hibernate.dialect.MySQLDialect
+    open-in-view: false
+    show-sql: true
