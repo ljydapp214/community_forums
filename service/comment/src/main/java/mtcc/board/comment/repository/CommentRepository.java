@@ -86,6 +86,4 @@ public interface CommentRepository extends JpaRepository<Comment, Long> {
 		@Param("lastCommentId") Long lastCommentId,
 		@Param("limit") long limit
 	);
-
 }
-
