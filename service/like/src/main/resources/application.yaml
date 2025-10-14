@@ -15,10 +15,9 @@ spring:
     database-platform: org.hibernate.dialect.MySQLDialect
     open-in-view: false
     show-sql: false
-#logging:
-#  level:
-#    org:
-#      hibernate:
-#        orm:
-#          jdbc:
-#            bind: TRACE
+  data:
+    redis:
+      host: 127.0.0.1
+      port: 6379
+  kafka:
+    bootstrap-servers: localhost:9092

@@ -1,5 +1,5 @@
 server:
-  port: 8080
+  port: 8081
 
 spring:
   application:
@@ -14,4 +14,10 @@ spring:
       ddl-auto: none
     database-platform: org.hibernate.dialect.MySQLDialect
     open-in-view: false
-    show-sql: false
+    show-sql: true
+  data:
+    redis:
+      host: 127.0.0.1
+      port: 6379
+  kafka:
+    bootstrap-servers: localhost:9092
