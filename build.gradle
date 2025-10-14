@@ -23,6 +23,7 @@ allprojects {
     }
 
     dependencies {
+        implementation 'ch.qos.logback:logback-classic'
         compileOnly 'org.projectlombok:lombok'
         annotationProcessor 'org.projectlombok:lombok'
 
@@ -34,7 +35,7 @@ allprojects {
 
         developmentOnly 'org.springframework.boot:spring-boot-devtools'
     }
-    
+
     tasks.named('test') {
         useJUnitPlatform()
     }
