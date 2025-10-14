@@ -12,7 +12,7 @@ import mtcc.board.article.service.response.ArticlePageResponse;
 import mtcc.board.article.service.response.ArticleResponse;
 
 class ArticleControllerTest {
-	RestClient restClient = RestClient.create("http://localhost:8080");
+	RestClient restClient = RestClient.create("http://localhost:8081");
 
 	@Test
 	void createTest() {
