@@ -9,6 +9,10 @@ import mtcc.board.article.entity.ArticleLikeCount;
 import mtcc.board.article.repository.ArticleLikeCountRepository;
 import mtcc.board.article.repository.ArticleLikeRepository;
 import mtcc.board.article.service.response.ArticleLikeResponse;
+import mtcc.board.common.event.EventType;
+import mtcc.board.common.event.payload.ArticleLikedEventPayload;
+import mtcc.board.common.event.payload.ArticleUnlikedEventPayload;
+import mtcc.board.common.outbox.OutboxEventPublisher;
 import mtcc.board.common.snowflake.Snowflake;
 
 @Service
@@ -17,6 +21,7 @@ public class ArticleLikeService {
 	private final Snowflake snowflake = new Snowflake();
 	private final ArticleLikeRepository articleLikeRepository;
 	private final ArticleLikeCountRepository articleLikeCountRepository;
+	private final OutboxEventPublisher outboxEventPublisher;
 
 	public ArticleLikeResponse read(
 		Long articleId, Long userId
@@ -46,16 +51,18 @@ public class ArticleLikeService {
 			ArticleLikeCount articleLikeCount = ArticleLikeCount.init(articleId, 1L);
 			articleLikeCountRepository.save(articleLikeCount);
 		}
-	}
 
-	@Transactional
-	public void unlikePessimisticLock1(
-		Long articleId, Long userId
-	) {
-		ArticleLike articleLike = articleLikeRepository.findByArticleIdAndUserId(articleId, userId).orElseThrow();
-		articleLikeRepository.delete(articleLike);
-
-		articleLikeCountRepository.decrease(articleId);
+		outboxEventPublisher.publish(
+			EventType.ARTICLE_LIKED,
+			ArticleLikedEventPayload.builder()
+				.articleLikeId(articleLike.getArticleLikeId())
+				.articleId(articleLike.getArticleId())
+				.userId(articleLike.getUserId())
+				.createdAt(articleLike.getCreatedAt())
+				.articleLikeCount(count(articleLike.getArticleId()))
+				.build(),
+			articleLike.getArticleId()
+		);
 	}
 
 	@Transactional
@@ -72,18 +79,6 @@ public class ArticleLikeService {
 	}
 
 	@Transactional
-	public void unlikePessimisticLock2(
-		Long articleId, Long userId
-	) {
-		ArticleLike articleLike = articleLikeRepository.findByArticleIdAndUserId(articleId, userId).orElseThrow();
-		articleLikeRepository.delete(articleLike);
-
-		ArticleLikeCount articleLikeCount = articleLikeCountRepository.findLockedByArticleId(articleId)
-			.orElseThrow();
-		articleLikeCount.decrease();
-	}
-
-	@Transactional
 	public void likeOptimisticLock(
 		Long articleId, Long userId
 	) {
@@ -94,6 +89,40 @@ public class ArticleLikeService {
 			.orElseGet(() -> ArticleLikeCount.init(articleId, 0L));
 		articleLikeCount.increase();
 		articleLikeCountRepository.save(articleLikeCount);
+	}
+
+	@Transactional
+	public void unlikePessimisticLock1(
+		Long articleId, Long userId
+	) {
+		ArticleLike articleLike = articleLikeRepository.findByArticleIdAndUserId(articleId, userId).orElseThrow();
+		articleLikeRepository.delete(articleLike);
+
+		articleLikeCountRepository.decrease(articleId);
+
+		outboxEventPublisher.publish(
+			EventType.ARTICLE_UNLIKED,
+			ArticleUnlikedEventPayload.builder()
+				.articleLikeId(articleLike.getArticleLikeId())
+				.articleId(articleLike.getArticleId())
+				.userId(articleLike.getUserId())
+				.createdAt(articleLike.getCreatedAt())
+				.articleLikeCount(count(articleLike.getArticleId()))
+				.build(),
+			articleLike.getArticleId()
+		);
+	}
+
+	@Transactional
+	public void unlikePessimisticLock2(
+		Long articleId, Long userId
+	) {
+		ArticleLike articleLike = articleLikeRepository.findByArticleIdAndUserId(articleId, userId).orElseThrow();
+		articleLikeRepository.delete(articleLike);
+
+		ArticleLikeCount articleLikeCount = articleLikeCountRepository.findLockedByArticleId(articleId)
+			.orElseThrow();
+		articleLikeCount.decrease();
 	}
 
 	@Transactional
