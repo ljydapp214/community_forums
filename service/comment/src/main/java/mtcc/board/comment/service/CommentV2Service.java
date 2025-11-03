@@ -16,6 +16,10 @@ import mtcc.board.comment.repository.CommentV2Repository;
 import mtcc.board.comment.service.request.CommentCreateRequestV2;
 import mtcc.board.comment.service.response.CommentPageResponse;
 import mtcc.board.comment.service.response.CommentResponse;
+import mtcc.board.common.event.EventType;
+import mtcc.board.common.event.payload.CommentCreatedEventPayload;
+import mtcc.board.common.event.payload.CommentDeletedEventPayload;
+import mtcc.board.common.outbox.OutboxEventPublisher;
 import mtcc.board.common.snowflake.Snowflake;
 
 @Service
@@ -24,6 +28,7 @@ public class CommentV2Service {
 	private final Snowflake snowflake = new Snowflake();
 	private final CommentV2Repository commentV2Repository;
 	private final ArticleCommentCountRepository articleCommentCountRepository;
+	private final OutboxEventPublisher outboxEventPublisher;
 
 	@Transactional
 	public CommentResponse create(CommentCreateRequestV2 request) {
@@ -45,6 +50,20 @@ public class CommentV2Service {
 			ArticleCommentCount commentCount = ArticleCommentCount.init(request.getArticleId(), 1L);
 			articleCommentCountRepository.save(commentCount);
 		}
+
+		outboxEventPublisher.publish(
+			EventType.COMMENT_CREATED,
+			CommentCreatedEventPayload.builder()
+				.commentId(saved.getCommentId())
+				.content(saved.getContent())
+				.articleId(saved.getArticleId())
+				.writerId(saved.getWriterId())
+				.deleted(saved.getDeleted())
+				.createdAt(saved.getCreatedAt())
+				.articleCommentCount(count(saved.getArticleId()))
+				.build(),
+			saved.getArticleId()
+		);
 
 		return CommentResponse.from(saved);
 	}
@@ -94,6 +113,20 @@ public class CommentV2Service {
 				} else {
 					delete(comment);
 				}
+
+				outboxEventPublisher.publish(
+					EventType.COMMENT_DELETED,
+					CommentDeletedEventPayload.builder()
+						.commentId(comment.getCommentId())
+						.content(comment.getContent())
+						.articleId(comment.getArticleId())
+						.writerId(comment.getWriterId())
+						.deleted(comment.getDeleted())
+						.createdAt(comment.getCreatedAt())
+						.articleCommentCount(count(comment.getArticleId()))
+						.build(),
+					comment.getArticleId()
+				);
 			});
 	}
 
